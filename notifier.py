@@ -14,15 +14,10 @@ def format_header(header_format,str):
   if not header in keys:
     print("%s not found" % header)
     return ""
-  tmp=email.Header.decode_header(str[header])
+  ret=''.join([unicode(i[0],i[1]) if i[1] else i[0] for i in email.Header.decode_header(str[header])])
   if header=='from':
-    ret=re.sub(' <(.*)>','',tmp[0][0])
-  else:
-    ret=tmp[0][0]
-  if tmp[0][1]:
-    return (format % unicode(ret,tmp[0][1]))
-  else:
-    return (format % ret)
+    ret=re.sub(' <(.*)>','', ret)
+  return (format % ret)
 
 
 
@@ -91,14 +86,14 @@ class Idler(object):
       flood_excess=0
       for id in b[0].split():
         data=self.M.fetch(id,'(RFC822)')
-	if data[1][0][0:len(id)]==id:
+        if data[1][0][0:len(id)]==id:
           header_data = data[1][1][1]
         else:
           header_data = data[1][0][1]
         parser = email.parser.HeaderParser()
         msg = parser.parsestr(header_data)
-	msg = ''.join([format_header(header, msg) for header in self.notifier.headers])
-	for chan in self.notifier.noticed:
+        msg = ''.join([format_header(header, msg) for header in self.notifier.headers])
+        for chan in self.notifier.noticed:
           self.notifier.notice(chan,msg)
           flood_excess+=1
           if flood_excess>=5:
