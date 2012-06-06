@@ -15,10 +15,14 @@ def format_header(header_format,str):
     print("%s not found" % header)
     return ""
   tmp=email.Header.decode_header(str[header])
-  if tmp[0][1]:
-    return (format % unicode(tmp[0][0],tmp[0][1]))
+  if header=='from':
+    ret=re.sub(' <(.*)>','',tmp[0][0])
   else:
-    return (format % tmp[0][0])
+    ret=tmp[0][0]
+  if tmp[0][1]:
+    return (format % unicode(ret,tmp[0][1]))
+  else:
+    return (format % ret)
 
 
 
