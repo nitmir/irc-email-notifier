@@ -87,7 +87,7 @@ class Idler(object):
       flood_excess=0
       for id in b[0].split():
         data=self.M.fetch(id,'(RFC822)')
-	if data[1][0][0:3]==id:
+	if data[1][0][0:len(id)]==id:
           header_data = data[1][1][1]
         else:
           header_data = data[1][0][1]
