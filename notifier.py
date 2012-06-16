@@ -14,7 +14,7 @@ def format_header(header_format,str):
   if not header in keys:
     print("%s not found" % header)
     return ""
-  ret=''.join([unicode(i[0],i[1]) if i[1] else i[0] for i in email.Header.decode_header(str[header])])
+  ret=' '.join([unicode(i[0],i[1]) if i[1] else i[0] for i in email.Header.decode_header(str[header])])
   if header=='from':
     ret=re.sub(' <(.*)>','', ret)
   return (format % ret)
@@ -103,7 +103,7 @@ class Idler(object):
 
 
 class Notifier(object):
-  def __init__(self, network, chans, nick, host, user, password, box, port=6667,debug=0,headers=[['Subject','%s']],irc_timeout=180.0,notice=[],charset='utf-8'):
+  def __init__(self, network, chans, nick, host, user, password, box, port=6667,debug=0,headers=[['Subject','%s']],irc_timeout=360.0,notice=[],charset='utf-8'):
     self.chans=chans
     self.noticed=notice
     self.noticed.extend(chans)
@@ -131,6 +131,8 @@ class Notifier(object):
         self.idler.start()
         while True:
           data = self.irc.recv ( 4096 )
+          if len(data)==0:
+            break
           data = data.split("\n")
           for data in data:
             code=data.split(' ')
