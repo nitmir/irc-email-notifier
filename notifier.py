@@ -113,6 +113,9 @@ class Notifier(object):
     nick_int=0
     nick_bool=False
     self.charset=charset
+    self.irc=None
+    self.idler=None
+    self.M=None
     while True:
       try:
         print("Connect to imap")
@@ -165,12 +168,21 @@ class Notifier(object):
             if data.find ( b'PING' ) != -1:
               self.irc.send ( b'PONG ' + data.split() [ 1 ] + b'\r\n' )
       finally:
-        self.irc.close()
-        self.idler.stop()
-        self.idler.join()
-        self.M.close()
-        self.M.logout()
-        self.M.shutdown()
+        if self.irc:
+            try: self.irc.close()
+            except: pass
+        if self.idler:
+            try: self.idler.stop()
+            except: pass
+            try: self.idler.join()
+            except: pass
+        if self.M:
+            try: self.M.close()
+            except: pass
+            try: self.M.logout()
+            except: pass
+            try: self.M.shutdown()
+            except: pass
         time.sleep(2)
 
   def say(self,chan,str):

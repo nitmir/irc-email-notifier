@@ -44,7 +44,7 @@ password='mail_password'
 box='INBOX'
 
 # niveau de verbosité du script
-debug=0
+debug=100
 
 # Format de la notification : liste de header mail et de masque à appliquer au contenue du header por l'affichier.
 # headers=[['subject','%s']]
@@ -61,7 +61,7 @@ notifier.Notifier(
 	password,  
 	box, 
 	port=port, 
-	debug=0, 
+	debug=debug, 
 	headers=headers, 
 	irc_timeout=irc_timeout,
 	notice=notice,
