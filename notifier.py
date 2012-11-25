@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import socket, imaplib2, time, re, email
 import email.parser
 from threading import *
@@ -103,7 +104,7 @@ class Idler(object):
 
 
 class Notifier(object):
-  def __init__(self, network, chans, nick, host, user, password, box, port=6667,debug=0,headers=[['Subject','%s']],irc_timeout=360.0,notice=[],charset='utf-8'):
+  def __init__(self, network, chans, nick, host, user, password, box, port=6667,debug=0,headers=[['Subject','%s']],irc_timeout=360.0,notice=[],charset='utf-8',use_ssl=True):
     self.chans=chans
     self.noticed=notice
     self.noticed.extend(chans)
@@ -115,7 +116,10 @@ class Notifier(object):
     while True:
       try:
         print("Connect to imap")
-        self.M = imaplib2.IMAP4_SSL(host,debug=debug)
+        if use_ssl:
+            self.M = imaplib2.IMAP4_SSL(host,debug=debug)
+        else:
+            self.M = imaplib2.IMAP4(host,debug=debug)
         print("Login")
         self.M.login(user,password)
         print("Selecting %s" % box)

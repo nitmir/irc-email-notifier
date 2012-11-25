@@ -1,0 +1,13 @@
+ * Il faut avoir installer python
+ * copier le fichier BotExample.py puis l'éditer selon convenance.
+ * Il suffit alors de lancer le fichier.
+ 
+ Si on veut que le script se relance après avoir quitter (par exemple
+ par ce qu'il a été déconnecté du serveur irc)
+ on peut utiliser l'un der script run.sh (pour linux) ou run.bat (pour windows)
+ qui prennent en arguement le nom du fichier à lancer puis le relance en bloucle lorsqu'il quitte.
+ 
+ par exemple, à lancer dans un terminal  : 
+  ./run.sh BotExample.py
+    ou
+  run.bat BotExample.py
