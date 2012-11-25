@@ -81,7 +81,10 @@ class Idler(object):
   # The method that gets called when a new email arrives. 
   # Replace it with something better.
   def dosync(self):
-    a,b=self.M.sort('DATE', 'UTF-8', 'UNSEEN')
+    try:
+        a,b=self.M.sort('DATE', 'UTF-8', 'UNSEEN')
+    except:
+        a,b=self.M.search('UTF-8', 'UNSEEN')
     if a=='OK' and len(b)>0 and len(b[0])>0:
       print(b)
       flood_excess=0
