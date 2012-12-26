@@ -152,7 +152,7 @@ class Notifier(object):
               code=0
             if code=='004':
                if nickserv_pass:
-                    say('nickserv','IDENTIFY %s' % nickserv_pass)
+                    self.say('nickserv','IDENTIFY %s' % nickserv_pass)
                     time.sleep(0.5)
                for chan in self.chans:
                  print('Join %s' % chan)
