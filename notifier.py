@@ -107,7 +107,7 @@ class Idler(object):
 
 
 class Notifier(object):
-  def __init__(self, network, chans, nick, host, user, password, box, port=6667,debug=0,headers=[['Subject','%s']],irc_timeout=360.0,notice=[],charset='utf-8',use_ssl=True):
+  def __init__(self, network, chans, nick, host, user, password, box, port=6667,debug=0,headers=[['Subject','%s']],irc_timeout=360.0,notice=[],charset='utf-8',use_ssl=True,nickserv_pass=None):
     self.chans=chans
     self.noticed=notice
     self.noticed.extend(chans)
@@ -151,6 +151,9 @@ class Notifier(object):
             else:
               code=0
             if code=='004':
+               if nickserv_pass:
+                    say('nickserv','IDENTIFY %s' % nickserv_pass)
+                    time.sleep(0.5)
                for chan in self.chans:
                  print('Join %s' % chan)
                  self.send (('JOIN %s' % chan ))
