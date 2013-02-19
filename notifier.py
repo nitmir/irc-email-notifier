@@ -15,9 +15,18 @@ def format_header(header_format,str):
   if not header in keys:
     print("%s not found" % header)
     return ""
-  ret=' '.join([unicode(i[0],i[1]) if i[1] else i[0] for i in email.Header.decode_header(str[header])])
+  ret=' '.join([unicode(i[0],i[1]) if i[1] else i[0] 
+      for i in email.Header.decode_header(
+                  re.sub(
+                      r"(=\?.*\?=)(?!$)", 
+                      r"\1 ", 
+                      str[header]
+                  )
+               )
+              ]
+          )
   if header=='from':
-    ret=re.sub(' <(.*)>','', ret)
+    ret=re.sub('"?([^"]*)"? <(.*)>','\\1', ret)
   return (format % ret)
 
 
