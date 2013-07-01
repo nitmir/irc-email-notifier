@@ -1,0 +1,24 @@
+params = {
+# IRC configuration
+'network':'irc.example.net',
+#'port':6667,
+'chans':["#channel"],
+'nick':"Notifier_bot",
+#'irc_timeout':360.0,
+#'notice':[],
+#'nickserv_pass':None,
+
+# IMAP configuration
+'host':'imap.example.net',
+'user':'notification@example.net',
+'password':'example',
+'box':'INBOX',
+#'use_ssl': True,
+
+# Misc
+#'debug':0,
+#'headers':[['from','Mail de %s : '],['subject','%s']],
+#'charset':'utf-8',
+}
+
+
