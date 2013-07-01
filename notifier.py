@@ -8,26 +8,6 @@ from threading import *
 
 
 
-def format_header(header_format,str):
-  keys=[i.lower() for i in str.keys()]
-  header=header_format[0].lower()
-  format=header_format[1]
-  if not header in keys:
-    print("%s not found" % header)
-    return ""
-  ret=' '.join([unicode(i[0],i[1]) if i[1] else i[0] 
-      for i in email.Header.decode_header(
-                  re.sub(
-                      r"(=\?.*\?=)(?!$)", 
-                      r"\1 ", 
-                      str[header]
-                  )
-               )
-              ]
-          )
-  if header=='from':
-    ret=re.sub('"?([^"]*)"? <(.*)>','\\1', ret)
-  return (format % ret)
 
 
 
@@ -55,6 +35,32 @@ class Idler(object):
 
   def test(self):
     return self.thread.is_alive()
+
+  def format_header(self, header_format, str):
+    keys=[i.lower() for i in str.keys()]
+    header=header_format[0].lower()
+    format=header_format[1]
+    if not header in keys:
+      print("%s not found" % header)
+      return ""
+    def safe_unicode(str, charset):
+      try:
+        return unicode(str, charset)
+      except UnicodeDecodeError:
+        return unicode("%r" % str)
+    ret=' '.join([safe_unicode(i[0], i[1]) if i[1] else safe_unicode(i[0], self.notifier.charset)
+        for i in email.Header.decode_header(
+                  re.sub(
+                      r"(=\?.*\?=)(?!$)",
+                      r"\1 ",
+                      str[header]
+                  )
+               )
+              ]
+            )
+    if header=='from':
+      ret=re.sub('"?([^"]*)"? <(.*)>','\\1', ret)
+    return (format % ret)
 
   def idle(self):
     self.needsync = True
@@ -105,7 +111,7 @@ class Idler(object):
           header_data = data[1][0][1]
         parser = email.parser.HeaderParser()
         msg = parser.parsestr(header_data)
-        msg = ''.join([format_header(header, msg) for header in self.notifier.headers])
+        msg = ''.join([self.format_header(header, msg) for header in self.notifier.headers])
         for chan in self.notifier.noticed:
           self.notifier.notice(chan,msg)
           flood_excess+=1
@@ -116,7 +122,7 @@ class Idler(object):
 
 
 class Notifier(object):
-  def __init__(self, network, chans, nick, host, user, password, box, port=6667,debug=0,headers=[['Subject','%s']],irc_timeout=360.0,notice=[],charset='utf-8',use_ssl=True,nickserv_pass=None):
+  def __init__(self, network, chans, nick, host, user, password, box, port=6667, debug=0, headers=[['Subject','%s']], irc_timeout=360.0, notice=[], charset='utf-8', use_ssl=True, nickserv_pass=None):
     self.chans=chans
     self.noticed=notice
     self.noticed.extend(chans)
@@ -145,8 +151,8 @@ class Notifier(object):
         print("Connection to irc")
         self.irc.connect ( ( network, port ) )
         print(self.irc.recv ( 4096 ))
-        self.send ( 'USER %s %s %s :Python IRC' % (nick,nick,nick) )
-        self.send ( 'NICK %s' % nick )
+        self.send ( u'USER %s %s %s :Python IRC' % (nick,nick,nick) )
+        self.send ( u'NICK %s' % nick )
         self.idler.start()
         while True:
           data = self.irc.recv ( 4096 )
@@ -161,13 +167,13 @@ class Notifier(object):
               code=0
             if code=='004':
                if nickserv_pass:
-                    self.say('nickserv','IDENTIFY %s' % nickserv_pass)
+                    self.say(u'nickserv',u'IDENTIFY %s' % nickserv_pass)
                     time.sleep(0.5)
                for chan in self.chans:
                  print('Join %s' % chan)
-                 self.send (('JOIN %s' % chan ))
+                 self.send (u'JOIN %s' % chan )
             elif code=='433':
-              self.send ( 'NICK %s%s' % (nick,nick_int) )
+              self.send ( u'NICK %s%s' % (nick,nick_int) )
               nick_int+=1
               nick_bool=True
             if debug!=0:
@@ -178,10 +184,10 @@ class Notifier(object):
             if not self.idler.test():
               raise ThreadDead()
             if nick_bool:
-              self.send ( 'NICK %s' % nick )
+              self.send ( u'NICK %s' % nick )
               nick_bool=False
             if data.find ( b'PING' ) != -1:
-              self.irc.send ( b'PONG ' + data.split() [ 1 ] + b'\r\n' )
+              self.irc.send ( u'PONG ' + data.split() [ 1 ] + b'\r\n' )
       finally:
         if self.irc:
             try: self.irc.close()
@@ -201,12 +207,12 @@ class Notifier(object):
         time.sleep(2)
 
   def say(self,chan,str):
-    msg='PRIVMSG %s :%s\r\n' % (chan,str)
+    msg=u'PRIVMSG %s :%s\r\n' % (chan,str)
     self.irc.send (msg.encode(self.charset))
   def notice(self,chan,str):
-    msg='NOTICE %s :%s\r\n' % (chan,str)
+    msg=u'NOTICE %s :%s\r\n' % (chan,str)
     self.irc.send (msg.encode(self.charset))
   def send(self,str):
-    msg='%s\r\n' % (str)
+    msg=u'%s\r\n' % (str)
     self.irc.send (msg.encode(self.charset))
   
