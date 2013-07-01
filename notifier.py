@@ -230,25 +230,48 @@ class Notifier(object):
 
 if __name__ == '__main__' :
   import sys
+  import os
+  import imp
+
   params_name = Notifier.__init__.func_code.co_varnames[:Notifier.__init__.func_code.co_argcount][1:]
   default_args = Notifier.__init__.func_defaults
   argc = len(params_name) - len(default_args)
   params = dict([(params_name[i], None if i < argc else default_args[i - argc]) for i in range(0, len(params_name))])
-  if '--confdir' in sys.argv:
-    i = sys.argv.index('--confdir')
-    if len(sys.argv)>i:
-      sys.path.append(sys.argv[i+1])
-      del(sys.argv[i+1])
-    del(sys.argv[i])
-  if len(sys.argv)>1:
-    module=__import__(sys.argv[1])
-    params.update(module.params)
+
+  def get_param(str):
+    ret = None
+    if str in sys.argv:
+      i = sys.argv.index(str)
+      if len(sys.argv)>i:
+         ret = sys.argv[i+1]
+         del(sys.argv[i+1])
+      del(sys.argv[i])
+    return ret
+
   def check_params(arg):
     if params[arg]: return None
     else: raise ValueError("Parameter %s is mandatory" % arg)
-  map(check_params, params_name[:argc])
+
+  confdir = get_param('--confdir') or os.path.dirname(os.path.realpath(__file__))
+  pidfile = get_param('--pidfile')
+
+  if len(sys.argv)>1:
+    module = imp.load_source('config', confdir + "/" + sys.argv[1])
+    params.update(module.params)
+
+  try:
+    map(check_params, params_name[:argc])
+  except (ValueError,) as error:
+    sys.stderr.write("%s\n" % error)
+    exit(1)
+
+  if pidfile:
+    f = open(pidfile, 'w')
+    f.write(os.getpid())
+    f.close()
+
   try:
     Notifier(**params)
   except (KeyboardInterrupt,):
-    pass
+    exit(0)
 

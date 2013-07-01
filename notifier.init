@@ -1,0 +1,117 @@
+#!/bin/bash
+# lsof -t -i @localhost:6666 -sTCP:listen
+
+DAEMON="/usr/local/bin/notifier/notifier.py"
+NAME="notifier"
+DESC="Irc mail notifier"
+PID_DIR="/var/run/$NAME"
+CONF_DIR="/etc/$NAME"
+USER="notifier"
+ARGS="--confdir $CONF_DIR"
+
+[ -f $DAEMON ] || exit 0
+
+. /lib/lsb/init-functions
+
+notifier_stoped(){
+  CONF=$1
+  if [ -f $PID_DIR/$CONF.pid ]; then
+    pid=`cat $PID_DIR/$CONF.pid`
+    if [ `ps -p $pid | wc -l` -eq 2 ]; then
+      return 1
+    fi
+  fi
+  return 0
+}
+
+notifier_start(){
+ CONF=$1
+ if $(notifier_stoped $CONF); then
+  log_daemon_msg "Starting $DESC $CONF"
+  mkdir -p $PID_DIR
+  /sbin/start-stop-daemon --start --pidfile $PID_DIR/$CONF.pid --user $USER --group $USER -b --make-pidfile --chuid $USER --exec $DAEMON -- $ARGS $CONF.conf
+ else
+  log_failure_msg "$CONF already running"
+ fi
+}
+
+notifier_stop(){
+ CONF=$1
+ if $(notifier_stoped $CONF); then
+  log_warning_msg "$CONF not running"
+ else
+  /sbin/start-stop-daemon --stop --pidfile $PID_DIR/$CONF.pid --verbose
+ fi
+}
+
+start(){
+    if test -z "$2" ; then
+      for CONF_FILE in `cd $CONF_DIR; ls *.conf 2> /dev/null`; do
+        CONF=${CONF_FILE%%.conf}
+        notifier_start $CONF
+      done
+    else
+      while shift ; do
+        [ -z "$1" ] && break
+        CONF=$1
+        if test -e $CONF_DIR/$CONF.conf ; then
+            notifier_start $CONF
+        else
+          log_failure_msg "missing $CONF_DIR/$CONF.conf"
+        fi
+      done
+    fi
+}
+
+stop(){
+    if test -z "$2" ; then
+      for CONF_FILE in `cd $CONF_DIR; ls *.conf 2> /dev/null`; do
+        CONF=${CONF_FILE%%.conf}
+        notifier_stop $CONF
+      done
+    else
+      while shift ; do
+        [ -z "$1" ] && break
+        CONF=$1
+        if test -e $CONF_DIR/$CONF.conf ; then
+          notifier_stop $CONF
+        else
+          log_failure_msg "missing $CONF_DIR/$CONF.conf"
+        fi
+      done
+    fi
+}
+status(){
+    if test -z "$2" ; then
+      for CONF_FILE in `cd $CONF_DIR; ls *.conf 2> /dev/null`; do
+        CONF=${CONF_FILE%%.conf}
+        status_of_proc -p "$PID_DIR/$CONF.pid" "$NAME" "$DESC $CONF"
+      done
+    else
+      while shift ; do
+        [ -z "$1" ] && break
+        CONF=$1
+        status_of_proc -p "$PID_DIR/$CONF.pid" "$NAME" "$DESC $CONF"
+      done
+    fi
+}
+
+case $1 in
+  start) start $@
+  ;;
+  stop) stop $@
+  ;;
+  restart)
+    stop $@
+    start $@
+  ;;
+  status)
+    status $@
+  ;;
+  *)
+   echo "Usage: $0 {start|stop|restart|status} [`cd $CONF_DIR; ls -m *.conf 2> /dev/null | sed 's/\.conf//g;s/, /|/g'`]" >&2
+   exit 1
+  ;;
+
+esac
+
