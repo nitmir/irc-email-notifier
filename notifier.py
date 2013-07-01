@@ -4,13 +4,6 @@ import socket, imaplib2, time, re, email
 import email.parser
 from threading import *
 
-
-
-
-
-
-
-
 class ThreadDead(Exception):
   def __init__(self):
     pass
@@ -130,12 +123,19 @@ class Notifier(object):
     self.headers=headers
     nick_int=0
     nick_bool=False
+    connected=False
     self.charset=charset
     self.irc=None
     self.idler=None
     self.M=None
+    self.debug=debug
     while True:
       try:
+        self.irc = socket.socket ( socket.AF_INET, socket.SOCK_STREAM )
+        self.irc.settimeout(irc_timeout)
+        print("Connection to irc")
+        self.irc.connect ( ( network, port ) )
+        #print(self.irc.recv ( 4096 ))
         print("Connect to imap")
         if use_ssl:
             self.M = imaplib2.IMAP4_SSL(host,debug=debug)
@@ -146,11 +146,6 @@ class Notifier(object):
         print("Selecting %s" % box)
         self.M.select(box)
         self.idler = Idler(self.M,self)
-        self.irc = socket.socket ( socket.AF_INET, socket.SOCK_STREAM )
-        self.irc.settimeout(irc_timeout)
-        print("Connection to irc")
-        self.irc.connect ( ( network, port ) )
-        print(self.irc.recv ( 4096 ))
         self.send ( u'USER %s %s %s :Python IRC' % (nick,nick,nick) )
         self.send ( u'NICK %s' % nick )
         self.idler.start()
@@ -160,34 +155,46 @@ class Notifier(object):
             break
           data = data.split("\n")
           for data in data:
+            if self.debug!=0:
+              try:
+                print(data)
+              except:
+                pass
             code=data.split(' ')
             if len(code)>1:
               code=code[1]
             else:
               code=0
-            if code=='004':
+            if code in [ '004', '376' ] and not connected:
+               connected=True
                if nickserv_pass:
                     self.say(u'nickserv',u'IDENTIFY %s' % nickserv_pass)
                     time.sleep(0.5)
                for chan in self.chans:
-                 print('Join %s' % chan)
+                 print("Join %s" % chan)
                  self.send (u'JOIN %s' % chan )
-            elif code=='433':
-              self.send ( u'NICK %s%s' % (nick,nick_int) )
-              nick_int+=1
+            elif code=='433': # Nickname is already in use
+              if not connected:
+                self.send ( u'NICK %s%s' % (nick,nick_int) )
+                nick_int+=1
               nick_bool=True
-            if debug!=0:
-              try:
-                print(data)
-              except:
-                pass
+            elif code=='INVITE':
+              chan=data.split(':',2)[2].strip()
+              print("Invited on %s." % chan)
+              if chan.lower() in [ chan.lower().strip() for chan in self.chans]:
+                print("Join %s" % chan)
+                self.send (u'JOIN %s' % chan )
+
             if not self.idler.test():
               raise ThreadDead()
-            if nick_bool:
-              self.send ( u'NICK %s' % nick )
-              nick_bool=False
+
             if data.find ( b'PING' ) != -1:
-              self.irc.send ( u'PONG ' + data.split() [ 1 ] + b'\r\n' )
+              self.irc.send ( b'PONG ' + data.split() [ 1 ] + b'\r\n' )
+
+            if connected:
+              if nick_bool:
+                self.send ( u'NICK %s' % nick )
+                nick_bool=False
       finally:
         if self.irc:
             try: self.irc.close()
@@ -208,11 +215,40 @@ class Notifier(object):
 
   def say(self,chan,str):
     msg=u'PRIVMSG %s :%s\r\n' % (chan,str)
+    if self.debug!=0: print(msg)
     self.irc.send (msg.encode(self.charset))
   def notice(self,chan,str):
     msg=u'NOTICE %s :%s\r\n' % (chan,str)
+    if self.debug!=0: print(msg)
     self.irc.send (msg.encode(self.charset))
   def send(self,str):
     msg=u'%s\r\n' % (str)
+    if self.debug!=0: print(msg)
     self.irc.send (msg.encode(self.charset))
   
+
+
+if __name__ == '__main__' :
+  import sys
+  params_name = Notifier.__init__.func_code.co_varnames[:Notifier.__init__.func_code.co_argcount][1:]
+  default_args = Notifier.__init__.func_defaults
+  argc = len(params_name) - len(default_args)
+  params = dict([(params_name[i], None if i < argc else default_args[i - argc]) for i in range(0, len(params_name))])
+  if '--confdir' in sys.argv:
+    i = sys.argv.index('--confdir')
+    if len(sys.argv)>i:
+      sys.path.append(sys.argv[i+1])
+      del(sys.argv[i+1])
+    del(sys.argv[i])
+  if len(sys.argv)>1:
+    module=__import__(sys.argv[1])
+    params.update(module.params)
+  def check_params(arg):
+    if params[arg]: return None
+    else: raise ValueError("Parameter %s is mandatory" % arg)
+  map(check_params, params_name[:argc])
+  try:
+    Notifier(**params)
+  except (KeyboardInterrupt,):
+    pass
+
