@@ -1,5 +1,12 @@
 #!/bin/bash
-# lsof -t -i @localhost:6666 -sTCP:listen
+### BEGIN INIT INFO
+# Provides:          notifier
+# Required-Start:    $remote_fs $network $syslog $named
+# Required-Stop:     $remote_fs $network $syslog $named
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Irc mail notifier
+### END INIT INFO
 
 DAEMON="/usr/local/bin/notifier/notifier.py"
 NAME="notifier"
@@ -9,7 +16,7 @@ CONF_DIR="/etc/$NAME"
 USER="notifier"
 ARGS="--confdir $CONF_DIR"
 
-[ -f $DAEMON ] || exit 0
+[ -x $DAEMON ] || exit 0
 
 . /lib/lsb/init-functions
 
@@ -105,13 +112,17 @@ case $1 in
     stop $@
     start $@
   ;;
+  force-reload)
+    stop $@
+    start $@
+  ;;
   status)
     status $@
   ;;
   *)
-   echo "Usage: $0 {start|stop|restart|status} [`cd $CONF_DIR; ls -m *.conf 2> /dev/null | sed 's/\.conf//g;s/, /|/g'`]" >&2
+   echo "Usage: $0 {start|stop|restart|force-reload|status} [`cd $CONF_DIR; ls -m *.conf 2> /dev/null | sed 's/\.conf//g;s/, /|/g'`]" >&2
    exit 1
   ;;
-
 esac
 
+exit 0
