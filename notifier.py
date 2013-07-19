@@ -115,7 +115,7 @@ class Idler(object):
         msg = parser.parsestr(header_data)
         msg = ''.join([self.format_header(header, msg) for header in self.notifier.headers])
         for chan in self.notifier.noticed:
-          self.notifier.notice(chan,msg)
+          self.notifier.notice(chan.split(' ',1)[0], msg)
           flood_excess+=1
           if flood_excess>=5:
             time.sleep(2)
@@ -190,7 +190,7 @@ class Notifier(object):
             elif code=='INVITE':
               chan=data.split(':',2)[2].strip()
               print("Invited on %s." % chan)
-              if chan.lower() in [ chan.lower().strip() for chan in self.chans]:
+              if chan.lower() in [ chan.lower().split(' ', 1)[0].strip() for chan in self.chans]:
                 print("Join %s" % chan)
                 self.send (u'JOIN %s' % chan )
 
