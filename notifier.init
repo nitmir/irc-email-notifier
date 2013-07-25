@@ -56,7 +56,7 @@ notifier_stop(){
  if $(notifier_stoped $CONF); then
   log_warning_msg "$CONF not running"
  else
-  /sbin/start-stop-daemon --stop --pidfile $PID_DIR/$CONF.pid --verbose
+  /sbin/start-stop-daemon --stop --pidfile $PID_DIR/$CONF.pid --verbose --retry 30
  fi
 }
 
