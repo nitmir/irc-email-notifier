@@ -51,15 +51,14 @@ class Idler(object):
       except UnicodeDecodeError:
         return unicode("%r" % str)
     ret=' '.join([safe_unicode(i[0], i[1]) if i[1] else safe_unicode(i[0], self.notifier.charset)
-        for i in email.Header.decode_header(
-                  re.sub(
-                      r"(=\?.*\?=)(?!$)",
-                      r"\1 ",
-                      str[header]
-                  )
-               )
-              ]
-            )
+        for i in email.Header.decode_header(str[header])])
+# Old hack because of some malformed internationalized header
+# but it create even more issues...
+#                  re.sub(
+#                      r"(=\?[^ ]*\?q\?[^ ]\?=)(?!\n)(?!$)",
+#                      r"\1 ",
+#                      str[header]
+#                  )
     if header=='from':
       ret=re.sub('"?([^"]*)"? <(.*)>','\\1', ret)
     return (format % ret)
