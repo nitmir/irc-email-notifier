@@ -107,7 +107,7 @@ class Idler(object):
     except:
         a,b=self.M.search('UTF-8', 'UNSEEN')
     if a=='OK' and len(b)>0 and len(b[0])>0:
-      print(b)
+      #print(b)
       flood_excess=0
       for id in b[0].split():
         data=self.M.fetch(id,'(RFC822)')
@@ -136,6 +136,7 @@ class Notifier(object):
     self.headers=headers
     nick_int=0
     nick_bool=False
+    nick_next=0
     connected=False
     self.charset=charset
     self.irc=None
@@ -190,6 +191,8 @@ class Notifier(object):
               if not connected:
                 self.send ( u'NICK %s%s' % (nick,nick_int) )
                 nick_int+=1
+              else:
+                nick_next = time.time() + 10
               nick_bool=True
             elif code=='INVITE':
               chan=data.split(':',2)[2].strip()
@@ -205,7 +208,7 @@ class Notifier(object):
               self.irc.send ( b'PONG ' + data.split() [ 1 ] + b'\r\n' )
 
             if connected:
-              if nick_bool:
+              if nick_bool and time.time()>nick_next:
                 self.send ( u'NICK %s' % nick )
                 nick_bool=False
       finally:
@@ -228,15 +231,15 @@ class Notifier(object):
 
   def say(self,chan,str):
     msg=u'PRIVMSG %s :%s\r\n' % (chan,str)
-    if self.debug!=0: print(msg)
+    if self.debug!=0: print(msg.encode(self.charset))
     self.irc.send (msg.encode(self.charset))
   def notice(self,chan,str):
     msg=u'NOTICE %s :%s\r\n' % (chan,str)
-    if self.debug!=0: print(msg)
+    if self.debug!=0: print(msg.encode(self.charset))
     self.irc.send (msg.encode(self.charset))
   def send(self,str):
     msg=u'%s\r\n' % (str)
-    if self.debug!=0: print(msg)
+    if self.debug!=0: print(msg.encode(self.charset))
     self.irc.send (msg.encode(self.charset))
   
 
