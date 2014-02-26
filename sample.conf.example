@@ -17,7 +17,8 @@ params = {
 
 # Misc
 #'debug':0,
-#'headers':[['from','Mail de %s : '],['subject','%s']],
+# a header is a list [ header name, formatter, optional substitution regexpr (match, replace) ]
+#'headers':[['from','Mail de %s : '],['subject','%s', ('(git|svn|darcs)', 'vcs')]],
 #'charset':'utf-8',
 }
 

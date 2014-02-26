@@ -61,7 +61,12 @@ class Idler(object):
 #                  )
     if header=='from':
       ret=re.sub('"?([^"]*)"? <(.*)>','\\1', ret)
-    return (format % ret)
+    ret = (format % ret)
+
+    if header_format[2:]:
+        match, replace = header_format[2]
+        ret = re.sub(match, replace, ret)
+    return ret
 
   def idle(self):
     self.needsync = True
